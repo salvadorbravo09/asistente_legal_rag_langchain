@@ -44,3 +44,20 @@ def initialize_rag_system():
     # Prompt para generacion de respuestas
     prompt = PromptTemplate.from_template(RAG_TEMPLATE)
     
+    # Cadena LCEL para el sistema RAG
+    # Primero, definimos que entra al prompt:
+    # El 'context' viene de buscar en Chroma y unir los textos
+    # La 'question' viene directa del usuario (RunnablePassthrough la deja pasar tal cual)
+    rag_chain = (
+        {"context": mmr_multi_retriever, "question": RunnablePassthrough()}
+        
+        # Esos dos datos se inyectan en el prompt
+        | prompt
+        
+        # El prompt lleno se le pasa a llm_generation  para generar la respuesta final
+        | llm_generation
+        
+        # Finalmente, limpiamos la respuesta de la IA para que solo entre texto puro
+        | StrOutputParser()
+    )
+    return rag_chain
