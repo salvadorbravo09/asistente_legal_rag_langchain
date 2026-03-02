@@ -44,12 +44,33 @@ def initialize_rag_system():
     # Prompt para generacion de respuestas
     prompt = PromptTemplate.from_template(RAG_TEMPLATE)
     
+    # Funcion para formatear y preprocesar los documentos recuperados antes de pasarlos al prompt
+    def format_docs(docs):
+        formatted = []
+        
+        for i, doc in enumerate(docs, 1):
+            header = f"[Fragmento {i}]"
+
+            if doc.metadata:
+                if 'source' in doc.metadata:
+                    source = doc.metadata['source'].split("\\")[-1] if "\\" in doc.metadata['source'] else doc.metadata['source']
+                    header += f" - Fuente: {source}"
+                    
+                if 'page' in doc.metadata:
+                    header += f", Pagina: {doc.metadata['page']}"
+        
+            content = doc.page_content.strip() # Eliminar espacios en blanco al inicio y al final
+            formatted.append(f"{header}\n{content}")
+        
+        return "\n\n".join(formatted) # Unir los fragmentos con doble salto de linea para mejor legibilidad
+                    
+    
     # Cadena LCEL para el sistema RAG
     # Primero, definimos que entra al prompt:
     # El 'context' viene de buscar en Chroma y unir los textos
     # La 'question' viene directa del usuario (RunnablePassthrough la deja pasar tal cual)
     rag_chain = (
-        {"context": mmr_multi_retriever, "question": RunnablePassthrough()}
+        {"context": mmr_multi_retriever | format_docs, "question": RunnablePassthrough()}
         
         # Esos dos datos se inyectan en el prompt
         | prompt
