@@ -1,4 +1,4 @@
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import RunnablePassthrough
@@ -7,6 +7,7 @@ from langchain_classic.retrievers.multi_query import MultiQueryRetriever
 import streamlit as st
 
 from config import *
+from prompts import *
 
 # Funcion principal para inicializar el sistema RAG
 def initialize_rag_system():
@@ -29,4 +30,17 @@ def initialize_rag_system():
             "fetch_k": MMR_FETCH_K, # Número de documentos a recuperar antes de aplicar MMR
         }
     )
+    
+    # Prompt personalizado para MultiQueryRetriever
+    multi_query_prompt = PromptTemplate.from_template(MULTI_QUERY_PROMPT)
+    
+    # MultiQueryRetriever con prompt personalizado
+    mmr_multi_retriever = MultiQueryRetriever.from_llm(
+        retriever=base_retriever,
+        llm=llm_queries,
+        prompt=multi_query_prompt
+    )
+    
+    # Prompt para generacion de respuestas
+    prompt = PromptTemplate.from_template(RAG_TEMPLATE)
     
