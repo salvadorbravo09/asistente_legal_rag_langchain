@@ -82,7 +82,7 @@ def initialize_rag_system():
         # Finalmente, limpiamos la respuesta de la IA para que solo entre texto puro
         | StrOutputParser()
     )
-    return rag_chain
+    return rag_chain, mmr_multi_retriever
 
 def query_rag(question):
     try:
@@ -92,7 +92,7 @@ def query_rag(question):
         response = rag_chain.invoke(question)
         
         # Obtener los documentos para mostrarlos al usuario (opcional, para transparencia)
-        docs = retriever.get_relevant_documents(question)
+        docs = retriever.invoke(question)
         
         # Formatear los documentos para mostrar
         docs_info = []
@@ -109,3 +109,14 @@ def query_rag(question):
         error_message = f"Error al procesar la consulta: {str(e)}"
         return error_message, []
             
+def get_retriever_info():
+    """Obtiene informacion sobre la configuracion del retriever"""
+    return {
+        "tipo": f"{SEARCH_TYPE.upper()}",
+        "documentos": SEARCH_K,
+        "diversidad": MMR_DIVERSITY_LAMBDA,
+        "candidatos": MMR_FETCH_K,
+        "query_model": QUERY_MODEL,
+        "generation_model": GENERATION_MODEL,
+        "umbral": None
+    }
