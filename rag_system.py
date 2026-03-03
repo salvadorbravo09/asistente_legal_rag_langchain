@@ -10,6 +10,7 @@ from config import *
 from prompts import *
 
 # Funcion principal para inicializar el sistema RAG
+@st.cache_resource # Cacheamos la funcion para evitar reinicializaciones innecesarias y mejorar el rendimiento en Streamlit
 def initialize_rag_system():
     # Inicializar la base de datos de vectores con Chroma
     vectorstore = Chroma(
@@ -82,3 +83,29 @@ def initialize_rag_system():
         | StrOutputParser()
     )
     return rag_chain
+
+def query_rag(question):
+    try:
+        rag_chain, retriever = initialize_rag_system()
+        
+        # Obtener la respuesta del sistema RAG
+        response = rag_chain.invoke(question)
+        
+        # Obtener los documentos para mostrarlos al usuario (opcional, para transparencia)
+        docs = retriever.get_relevant_documents(question)
+        
+        # Formatear los documentos para mostrar
+        docs_info = []
+        for i, doc in enumerate(docs[:SEARCH_K], 1):
+            doc_info = {
+                "fragmento": i,
+                "contenido": doc.page_content[:1000] + "..." if len(doc.page_content) > 1000 else doc.page_content, # Mostrar solo los primeros 1000 caracteres para evitar saturar la interfaz
+                "fuente": doc.metadata.get('source', 'No especificada').split("\\")[-1],
+                "pagina": doc.metadata.get('page', "No especificada")
+            }
+            docs_info.append(doc_info)
+        return response, docs_info
+    except Exception as e:
+        error_message = f"Error al procesar la consulta: {str(e)}"
+        return error_message, []
+            
